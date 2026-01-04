@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const ClassesPage = () => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedClass] = useState(null);
   const [showBooking, setShowBooking] = useState(false);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notification, setNotification] = useState(null);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -22,7 +24,7 @@ const ClassesPage = () => {
         const response = await axios.get(`${API_URL}/classes`, {
           params: { category: selectedCategory }
         });
-        
+
         if (response.data.success) {
           setClasses(response.data.data);
         } else {
@@ -50,10 +52,10 @@ const ClassesPage = () => {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
-      case 'Beginner': return 'bg-green-100 text-green-800';
-      case 'Intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'Advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case 'Beginner': return 'bg-green-500/20 text-green-400 border border-green-500/30';
+      case 'Intermediate': return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+      case 'Advanced': return 'bg-red-500/20 text-red-400 border border-red-500/30';
+      default: return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
     }
   };
 
@@ -66,14 +68,17 @@ const ClassesPage = () => {
 
   const handleBookClass = async (classItem) => {
     if (!isAuthenticated) {
-      alert('Please login to book a class');
+      navigate('/login');
       return;
     }
-    
+
     try {
       const response = await axios.post(`${API_URL}/classes/${classItem.id}/book`);
       if (response.data.success) {
-        alert(`Class booked successfully! ${response.data.data.availableSpots} spots remaining.`);
+        setNotification({
+          type: 'success',
+          message: `Class booked successfully! ${response.data.data.availableSpots} spots remaining.`
+        });
         // Refresh classes to show updated booking count
         const updatedResponse = await axios.get(`${API_URL}/classes`, {
           params: { category: selectedCategory }
@@ -82,11 +87,17 @@ const ClassesPage = () => {
           setClasses(updatedResponse.data.data);
         }
       } else {
-        alert(response.data.message || 'Failed to book class');
+        setNotification({
+          type: 'error',
+          message: response.data.message || 'Failed to book class'
+        });
       }
     } catch (error) {
       console.error('Error booking class:', error);
-      alert(error.response?.data?.message || 'Failed to book class. Please try again.');
+      setNotification({
+        type: 'error',
+        message: error.response?.data?.message || 'Failed to book class. Please try again.'
+      });
     }
   };
 
@@ -102,12 +113,12 @@ const ClassesPage = () => {
               ✕
             </button>
           </div>
-          
+
           <div className="mb-4">
             <h4 className="font-semibold text-lg">{selectedClass.name}</h4>
             <p className="text-gray-600">with {selectedClass.instructor}</p>
           </div>
-          
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Select Date & Time</label>
             <select className="w-full p-2 border border-gray-300 rounded-md">
@@ -118,23 +129,23 @@ const ClassesPage = () => {
               ))}
             </select>
           </div>
-          
+
           <div className="mb-6">
             <p className="text-sm text-gray-600">
               Available spots: {selectedClass.maxCapacity - selectedClass.currentBookings} / {selectedClass.maxCapacity}
             </p>
           </div>
-          
+
           <div className="flex space-x-3">
-            <button 
+            <button
               onClick={() => setShowBooking(false)}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </button>
-            <button 
+            <button
               onClick={() => {
-                alert('Class booked successfully!');
+                setNotification({ type: 'success', message: 'Class booked successfully!' });
                 setShowBooking(false);
               }}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -148,16 +159,14 @@ const ClassesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Fitness Classes
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            Fitness <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Classes</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Join our expert-led fitness classes designed to help you reach your goals. 
-            From relaxing yoga to high-intensity training, we have something for everyone.
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+            Join our expert-led fitness classes designed to help you reach your goals.
           </p>
         </div>
 
@@ -175,7 +184,7 @@ const ClassesPage = () => {
                   {error}
                 </h3>
                 <div className="mt-2">
-                  <button 
+                  <button
                     onClick={() => window.location.reload()}
                     className="text-sm bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded"
                   >
@@ -187,18 +196,32 @@ const ClassesPage = () => {
           </div>
         )}
 
-        {/* Category Filter */}
+        {/* Notification */}
+        {notification && (
+          <div className={`mb-8 border rounded-lg p-4 ${notification.type === 'success'
+            ? 'bg-green-50 border-green-200 text-green-700'
+            : 'bg-red-50 border-red-200 text-red-700'
+            }`}>
+            <p>{notification.message}</p>
+            <button
+              onClick={() => setNotification(null)}
+              className="mt-2 text-sm underline hover:no-underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-wrap justify-center gap-4 mb-12">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
               disabled={loading}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-colors ${
-                selectedCategory === category.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center space-x-2 px-5 py-3 rounded-xl transition-all ${selectedCategory === category.id
+                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/25'
+                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 border border-gray-700/50'
+                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span>{category.icon}</span>
               <span>{category.name}</span>
@@ -214,99 +237,95 @@ const ClassesPage = () => {
           </div>
         )}
 
-        {/* No Classes State */}
         {!loading && !error && classes.length === 0 && (
           <div className="text-center py-16">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No classes found</h3>
-            <p className="text-gray-600">Try selecting a different category or check back later.</p>
+            <h3 className="text-lg font-medium text-white mb-2">No classes found</h3>
+            <p className="text-gray-400">Try selecting a different category or check back later.</p>
           </div>
         )}
 
-        {/* Classes Grid */}
         {!loading && !error && classes.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {classes.map((classItem) => (
-            <div key={classItem.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-gray-900">{classItem.name}</h3>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(classItem.difficulty)}`}>
-                    {classItem.difficulty}
-                  </span>
-                </div>
-                
-                <p className="text-gray-600 mb-4">{classItem.description}</p>
-                
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <span className="font-medium">Instructor:</span>
-                    <span className="ml-1">{classItem.instructor}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <span className="font-medium">Duration:</span>
-                    <span className="ml-1">{classItem.duration}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <span className="font-medium">Price:</span>
-                    <span className="ml-1">{classItem.price}</span>
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Availability</span>
-                    <span className={`text-sm font-medium ${getAvailabilityColor(classItem.currentBookings, classItem.maxCapacity)}`}>
-                      {classItem.maxCapacity - classItem.currentBookings} spots left
+              <div key={classItem.id} className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden hover:border-blue-500/50 transition-all">
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold text-white">{classItem.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(classItem.difficulty)}`}>
+                      {classItem.difficulty}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full" 
-                      style={{ width: `${(classItem.currentBookings / classItem.maxCapacity) * 100}%` }}
-                    ></div>
+
+                  <p className="text-gray-400 mb-4">{classItem.description}</p>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span className="font-medium text-gray-400">Instructor:</span>
+                      <span className="ml-1">{classItem.instructor}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span className="font-medium text-gray-400">Duration:</span>
+                      <span className="ml-1">{classItem.duration}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span className="font-medium text-gray-400">Price:</span>
+                      <span className="ml-1">{classItem.price}</span>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="mb-4">
-                  <span className="text-sm font-medium text-gray-700">Schedule:</span>
-                  <div className="mt-1 space-y-1">
-                    {classItem.schedule.map((slot, index) => (
-                      <div key={index} className="text-sm text-gray-600">
-                        {slot.day}s at {slot.time}
-                      </div>
-                    ))}
+
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-400">Availability</span>
+                      <span className={`text-sm font-medium ${getAvailabilityColor(classItem.currentBookings, classItem.maxCapacity)}`}>
+                        {classItem.maxCapacity - classItem.currentBookings} spots left
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full"
+                        style={{ width: `${(classItem.currentBookings / classItem.maxCapacity) * 100}%` }}
+                      ></div>
+                    </div>
                   </div>
+
+                  <div className="mb-4">
+                    <span className="text-sm font-medium text-gray-400">Schedule:</span>
+                    <div className="mt-1 space-y-1">
+                      {classItem.schedule.map((slot, index) => (
+                        <div key={index} className="text-sm text-gray-300">
+                          {slot.day}s at {slot.time}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleBookClass(classItem)}
+                    disabled={classItem.currentBookings >= classItem.maxCapacity}
+                    className={`w-full py-3 px-4 rounded-xl font-medium transition-all ${classItem.currentBookings >= classItem.maxCapacity
+                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25'
+                      }`}
+                  >
+                    {classItem.currentBookings >= classItem.maxCapacity ? 'Class Full' : 'Book Class'}
+                  </button>
                 </div>
-                
-                <button
-                  onClick={() => handleBookClass(classItem)}
-                  disabled={classItem.currentBookings >= classItem.maxCapacity}
-                  className={`w-full py-2 px-4 rounded-md font-medium transition-colors ${
-                    classItem.currentBookings >= classItem.maxCapacity
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {classItem.currentBookings >= classItem.maxCapacity ? 'Class Full' : 'Book Class'}
-                </button>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         )}
 
-        {/* Call to Action */}
         {!isAuthenticated && (
-          <div className="mt-16 text-center bg-blue-50 p-8 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Start Your Fitness Journey?</h2>
-            <p className="text-gray-600 mb-6">Join our gym to access all classes and start booking today!</p>
-            <Link to="/signup" className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+          <div className="mt-16 text-center bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30 p-8 rounded-2xl">
+            <h2 className="text-2xl font-bold text-white mb-4">Ready to Start Your Fitness Journey?</h2>
+            <p className="text-gray-400 mb-6">Join our gym to access all classes and start booking today!</p>
+            <Link to="/signup" className="inline-block bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all shadow-lg shadow-blue-500/25">
               Sign Up Now
             </Link>
           </div>
         )}
       </div>
-      
+
       <BookingModal />
     </div>
   );

@@ -92,11 +92,7 @@ const User = sequelize.define('User', {
   },
   membershipId: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'Memberships',
-      key: 'id'
-    }
+    allowNull: true
   },
   profileImage: {
     type: DataTypes.STRING,

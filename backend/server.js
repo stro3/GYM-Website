@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const { connectDB } = require('./config/database');
 require('dotenv').config();
 
@@ -45,12 +46,21 @@ app.use('/api/blog', blogRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     message: 'Server is running!',
     database: 'SQLite (Embedded)',
     timestamp: new Date().toISOString()
   });
 });
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Send all non-API requests to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -63,14 +73,14 @@ const startServer = async () => {
   try {
     // Connect to SQLite database
     const dbConnected = await connectDB();
-    
+
     if (dbConnected) {
       console.log('✅ Database setup completed');
     } else {
       console.log('❌ Database setup failed');
       process.exit(1);
     }
-    
+
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);

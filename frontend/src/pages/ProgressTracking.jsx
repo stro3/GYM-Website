@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext'; // Commented out as not currently used
 
 const ProgressTracking = () => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // Commented out as not currently used
   const [activeTab, setActiveTab] = useState('bmi');
   const [bmiData, setBmiData] = useState({
     height: '',
@@ -11,6 +11,7 @@ const ProgressTracking = () => {
     gender: 'male'
   });
   const [bmiResult, setBmiResult] = useState(null);
+  const [notification, setNotification] = useState(null);
 
   // Mock workout data
   const workoutHistory = [
@@ -58,7 +59,7 @@ const ProgressTracking = () => {
 
   const calculateBMI = () => {
     if (!bmiData.height || !bmiData.weight) {
-      alert('Please enter both height and weight');
+      setNotification({ type: 'error', message: 'Please enter both height and weight' });
       return;
     }
 
@@ -75,16 +76,16 @@ const ProgressTracking = () => {
       recommendation = 'Consider a balanced diet with adequate calories and strength training.';
       color = 'text-blue-600';
     } else if (bmi < 25) {
-      category = 'Normal Weight';
-      recommendation = 'Maintain your current lifestyle with regular exercise and balanced nutrition.';
+      category = 'Normal weight';
+      recommendation = 'Great job! Maintain your current lifestyle with regular exercise and balanced nutrition.';
       color = 'text-green-600';
     } else if (bmi < 30) {
       category = 'Overweight';
-      recommendation = 'Focus on cardiovascular exercise and a calorie-controlled diet.';
+      recommendation = 'Consider increasing physical activity and focusing on a balanced, calorie-controlled diet.';
       color = 'text-yellow-600';
     } else {
       category = 'Obese';
-      recommendation = 'Consult with our trainers for a comprehensive weight management program.';
+      recommendation = 'Consult with a healthcare provider for a comprehensive weight management plan.';
       color = 'text-red-600';
     }
 
@@ -332,11 +333,16 @@ const ProgressTracking = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'bmi': return <BMICalculator />;
-      case 'workouts': return <WorkoutHistory />;
-      case 'measurements': return <BodyMeasurements />;
-      case 'goals': return <FitnessGoals />;
-      default: return <BMICalculator />;
+      case 'bmi':
+        return <BMICalculator />;
+      case 'workouts':
+        return <WorkoutHistory />;
+      case 'measurements':
+        return <BodyMeasurements />;
+      case 'goals':
+        return <FitnessGoals />;
+      default:
+        return <BMICalculator />;
     }
   };
 
@@ -348,6 +354,23 @@ const ProgressTracking = () => {
           <h1 className="text-3xl font-bold text-gray-900">Progress Tracking</h1>
           <p className="text-gray-600">Monitor your fitness journey and achieve your goals</p>
         </div>
+
+        {/* Notification */}
+        {notification && (
+          <div className={`mb-8 border rounded-lg p-4 ${
+            notification.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-700' 
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
+            <p>{notification.message}</p>
+            <button 
+              onClick={() => setNotification(null)}
+              className="mt-2 text-sm underline hover:no-underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow mb-6">
