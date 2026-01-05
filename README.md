@@ -100,6 +100,38 @@ cd ../backend
 node server.js
 ```
 
+## 🚀 **Deploying to Vercel**
+
+### **Quick Deploy**
+1. Install Vercel CLI:
+```bash
+npm install -g vercel
+```
+
+2. Build and deploy:
+```bash
+vercel-build.bat
+vercel --prod
+```
+
+3. Configure environment variables in Vercel Dashboard:
+- `JWT_SECRET` - Secure random key for JWT tokens
+- `NODE_ENV` - Set to `production`
+- `FRONTEND_URL` - Your Vercel deployment URL
+- `DATABASE_URL` - Production database connection string (optional)
+
+### **Documentation**
+- **Quick Start Guide**: `DEPLOY_QUICK_START.md`
+- **Comprehensive Guide**: `VERCEL_DEPLOYMENT.md`
+- **Database Migration**: `DATABASE_MIGRATION.md`
+
+### **Important Notes**
+- SQLite does not persist on Vercel serverless functions
+- Use PostgreSQL, MySQL, or MongoDB for production
+- All API routes are accessible at `/api/*` paths
+- Frontend automatically built from `frontend/dist` directory
+
+
 
 ## 📱 **Key Features Details**
 
