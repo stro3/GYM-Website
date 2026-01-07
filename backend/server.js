@@ -76,14 +76,25 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// Serve frontend static files
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// Serve frontend static files (only if dist exists - for local development)
+const fs = require('fs');
+const frontendPath = path.join(__dirname, '../frontend/dist');
 
-// Send all non-API requests to React app
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-});
-
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'GymFit Pro API Server',
+      status: 'running',
+      api: '/api',
+      health: '/api/health'
+    });
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
